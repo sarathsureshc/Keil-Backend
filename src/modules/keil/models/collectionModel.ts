@@ -7,6 +7,7 @@ export const CollectionModel = {
         let query = supabase.from('keil_collection_headers').select(`
             *,
             route:${isScoped ? 'keil_routes!inner(route_name, route_code, branch_id)' : 'keil_routes(route_name, route_code)'}
+            ${filters?.with_entries ? ', entries:keil_collection_entries(is_visited, hce:keil_hces(hce_category))' : ''}
         `);
 
         if (companyId) query = query.eq('company_id', companyId);

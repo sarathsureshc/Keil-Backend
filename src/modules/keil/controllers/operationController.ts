@@ -250,9 +250,9 @@ export const deleteAssignment = async (req: Request, res: Response) => {
 // Collection Batch Handlers
 export const getCollectionHeaders = async (req: Request, res: Response) => {
     try {
-        const { company_id, date, route_id, date_from, date_to } = req.query;
+        const { company_id, date, route_id, date_from, date_to, with_entries } = req.query;
         const { isAllBranches, branchIds } = getUserBranchScope(req);
-        const data = await CollectionModel.getHeaders(company_id as string, { date, route_id, date_from, date_to }, branchIds, isAllBranches);
+        const data = await CollectionModel.getHeaders(company_id as string, { date, route_id, date_from, date_to, with_entries: with_entries === '1' }, branchIds, isAllBranches);
         res.status(200).json({ success: true, data });
     } catch (err: any) {
         res.status(500).json({ success: false, message: err.message });
