@@ -187,32 +187,67 @@ export const deleteRoute = async (req: Request, res: Response) => {
 };
 
 // Route Assignment Handlers
+// A month-plan rule broken (past month, month not started) answers 403/409 with its reason
+const fail = (res: Response, err: any) => res.status(err.status || 500).json({ success: false, message: err.message });
+const userOf = (req: Request) => (req as any).user;
+
 export const getAssignments = async (req: Request, res: Response) => {
     try {
-        const { route_id } = req.query;
+        const { route_id, month } = req.query;
         if (!route_id) return res.status(400).json({ success: false, message: 'route_id is required' });
-        const data = await AssignmentModel.getRouteAssignments(route_id as string);
+        const { data, plan_month } = await AssignmentModel.getRouteAssignments(route_id as string, month as string | undefined);
+        res.status(200).json({ success: true, data, plan_month });
+    } catch (err: any) {
+        fail(res, err);
+    }
+};
+
+export const startRouteMonth = async (req: Request, res: Response) => {
+    try {
+        const data = await AssignmentModel.startMonth(req.body, userOf(req));
+        res.status(201).json({ success: true, data });
+    } catch (err: any) {
+        fail(res, err);
+    }
+};
+
+export const undoRouteMonth = async (req: Request, res: Response) => {
+    try {
+        const data = await AssignmentModel.undoStartMonth(req.body, userOf(req));
         res.status(200).json({ success: true, data });
     } catch (err: any) {
-        res.status(500).json({ success: false, message: err.message });
+        fail(res, err);
     }
 };
 
 export const createAssignment = async (req: Request, res: Response) => {
     try {
-        const data = await AssignmentModel.assignHce(req.body);
+        const data = await AssignmentModel.assignHce(req.body, userOf(req));
         res.status(201).json({ success: true, data });
     } catch (err: any) {
-        res.status(500).json({ success: false, message: err.message });
+        fail(res, err);
+    }
+};
+
+export const moveAssignments = async (req: Request, res: Response) => {
+    try {
+        const { ids, route_id } = req.body;
+        if (!Array.isArray(ids) || !ids.length || !route_id) {
+            return res.status(400).json({ success: false, message: 'ids and route_id are required' });
+        }
+        const data = await AssignmentModel.moveLinks(req.body, userOf(req));
+        res.status(200).json({ success: true, data });
+    } catch (err: any) {
+        fail(res, err);
     }
 };
 
 export const updateAssignment = async (req: Request, res: Response) => {
     try {
-        const data = await AssignmentModel.updateAssignment(req.params.id as string, req.body);
+        const data = await AssignmentModel.updateAssignment(req.params.id as string, req.body, userOf(req));
         res.status(200).json({ success: true, data });
     } catch (err: any) {
-        res.status(500).json({ success: false, message: err.message });
+        fail(res, err);
     }
 };
 
@@ -222,28 +257,28 @@ export const bulkAssign = async (req: Request, res: Response) => {
         if (!route_id || !Array.isArray(collection_days) || !collection_days.length || !Array.isArray(items)) {
             return res.status(400).json({ success: false, message: 'route_id, collection_days and items are required' });
         }
-        const data = await AssignmentModel.replaceDayList(req.body);
+        const data = await AssignmentModel.replaceDayList(req.body, userOf(req));
         res.status(201).json({ success: true, data });
     } catch (err: any) {
-        res.status(500).json({ success: false, message: err.message });
+        fail(res, err);
     }
 };
 
 export const reorderAssignments = async (req: Request, res: Response) => {
     try {
-        await AssignmentModel.reorder(req.body.items || []);
+        await AssignmentModel.reorder(req.body.items || [], userOf(req));
         res.status(200).json({ success: true });
     } catch (err: any) {
-        res.status(500).json({ success: false, message: err.message });
+        fail(res, err);
     }
 };
 
 export const deleteAssignment = async (req: Request, res: Response) => {
     try {
-        await AssignmentModel.removeHce(req.params.id as string);
+        await AssignmentModel.removeHce(req.params.id as string, userOf(req));
         res.status(200).json({ success: true, message: 'Assignment removed successfully.' });
     } catch (err: any) {
-        res.status(500).json({ success: false, message: err.message });
+        fail(res, err);
     }
 };
 

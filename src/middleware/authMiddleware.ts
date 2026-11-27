@@ -39,7 +39,11 @@ const isAdminUser = (user: any) =>
     (user?.role_name || '').toLowerCase() === 'admin' ||
     ADMIN_EMAILS.includes((user?.email || '').toLowerCase());
 
-export const adminOnly = (req: AuthRequest, res: Response, next: NextFunction) => {
+/** Admin and the Keil operations manager: may start a month's route plan and change past months' plans. */
+export const isRoutePlanner = (user: any) =>
+    isAdminUser(user) || (user?.role_name || '').trim().toLowerCase() === 'manager operations';
+
+export const adminOnly =(req: AuthRequest, res: Response, next: NextFunction) => {
     if (req.user && isAdminUser(req.user)) {
         next();
     } else {
